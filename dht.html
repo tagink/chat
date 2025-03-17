@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P WebRTC Chat with DHT</title>
+</head>
+<body>
+<h1>P2P WebRTC Chat</h1>
+
+<input type="text" id="username" placeholder="Enter @tag (e.g. @joe)">
+<button onclick="registerUser()">Register</button>
+
+<input type="text" id="peerTag" placeholder="Enter peer @tag">
+<button onclick="connectToPeer()">Connect</button>
+
+<br><br>
+
+<input type="text" id="message" placeholder="Type a message">
+<button onclick="sendMessage()">Send</button>
+
+<div id="chat"></div>
+
+<!-- WebTorrent (Client-Side DHT) -->
+<script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+
+<script>
+    let client = new WebTorrent();
+    let peerConnection = new RTCPeerConnection();
+    let dataChannel = peerConnection.createDataChannel("chat");
+
+    dataChannel.onopen = () => console.log("Connected! Ready to chat.");
+    dataChannel.onmessage = event => {
+        let chatBox = document.getElementById("chat");
+        chatBox.innerHTML += `<p>Peer: ${event.data}</p>`;
+    };
+
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            console.log("ICE Candidate:", JSON.stringify(event.candidate));
+        }
+    };
+
+    function generateDHTKey(tag) {
+        return btoa(tag).substr(0, 32); // Generate a simple DHT key
+    }
+
+    async function registerUser() {
+        let tag = document.getElementById("username").value;
+        if (!tag.startsWith("@")) {
+            alert("Tag must start with @");
+            return;
+        }
+
+        let offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        let key = generateDHTKey(tag);
+        client.seed(new Blob([JSON.stringify(offer)]), torrent => {
+            console.log(`Registered as ${tag}, infoHash:`, torrent.infoHash);
+            localStorage.setItem(tag, torrent.infoHash);
+        });
+    }
+
+    function connectToPeer() {
+        let peerTag = document.getElementById("peerTag").value;
+        if (!peerTag.startsWith("@")) {
+            alert("Tag must start with @");
+            return;
+        }
+
+        let key = generateDHTKey(peerTag);
+        let infoHash = localStorage.getItem(peerTag);
+
+        if (!infoHash) {
+            alert("Peer not found in DHT.");
+            return;
+        }
+
+        client.add(infoHash, async torrent => {
+            torrent.files[0].getBlob((err, blob) => {
+                if (err) {
+                    console.error("Error fetching peer data:", err);
+                    return;
+                }
+                blob.text().then(async text => {
+                    let remoteOffer = JSON.parse(text);
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(remoteOffer));
+
+                    let answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+
+                    console.log("Connected to peer:", peerTag);
+                });
+            });
+        });
+    }
+
+    function sendMessage() {
+        let message = document.getElementById("message").value;
+
+        if (dataChannel.readyState !== "open") {
+            console.error("Data channel is not open yet.");
+            return;
+        }
+
+        dataChannel.send(message);
+
+        let chatBox = document.getElementById("chat");
+        chatBox.innerHTML += `<p>You: ${message}</p>`;
+    }
+
+</script>
+</body>
+</html>
