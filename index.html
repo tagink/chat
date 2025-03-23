@@ -4,14 +4,20 @@
     <title>Such encrypted. Very P2P. Much chat. Wow!</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/img/icon.white.rounded.svg" type="image/svg+xml">
-    <script src="/app.js" type="module"></script>
+    <meta name="description" content="Such encrypted. Very P2P. Much chat. Wow!">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=send" />
     <link rel="stylesheet" href="/style.css">
+    <script src="/app.js" type="module"></script>
 </head>
-<body>
+<body class="noto-sans-mono-normal">
 <header>
     <img src="/img/icon.white.rounded.svg" alt="" width="64" height="64">
-    <h1>tag.ink</h1>
+    <h1>tagink</h1>
 </header>
 <main>
     <div class="messages">
@@ -47,8 +53,11 @@
 </main>
 <footer>
     <form id="message_form">
-        <input type="text" id="message">
+        <label>
+            <input type="text" id="message">
+        </label>
         <input type="submit" id="send" value="Send">
+        <span class="material-symbols-outlined">send</span>
     </form>
 </footer>
 </body>
